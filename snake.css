@@ -1,0 +1,371 @@
+/* ============================================
+   SNAKE GAME - STYLESHEET
+   Modern, responsive design with dark theme
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Typography */
+h1 {
+  margin: 20px 0;
+  font-size: 2.5em;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  animation: slideDown 0.6s ease-out;
+}
+
+/* Main Container */
+#container {
+  margin: 0 auto;
+  max-width: 450px;
+  width: 90%;
+  padding: 30px;
+  background: rgba(15, 52, 96, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(22, 160, 133, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Scoreboard */
+#scoreboard {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(26, 188, 156, 0.15);
+  border-radius: 8px;
+  border-left: 4px solid #1abc9c;
+  display: none;
+  animation: fadeIn 0.5s ease-in;
+}
+
+#score, #bestscore {
+  color: #f1c40f;
+  font-weight: 700;
+}
+
+/* Start Screen */
+#startscreen {
+  display: none;
+  padding: 25px;
+  background: rgba(22, 160, 133, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(22, 160, 133, 0.3);
+  animation: fadeIn 0.5s ease-in;
+}
+
+#startscreen.active {
+  display: block;
+}
+
+#startscreen p {
+  margin: 12px 0;
+  font-size: 1em;
+  line-height: 1.6;
+}
+
+#startscreen p:first-child {
+  font-size: 1.3em;
+  font-weight: 600;
+  color: #1abc9c;
+  margin-bottom: 20px;
+}
+
+.highlight {
+  color: #1abc9c;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(26, 188, 156, 0.2);
+  border-radius: 3px;
+}
+
+/* Game Canvas */
+#game {
+  display: block;
+  margin: 20px auto;
+  background: #111;
+  border: 3px solid #1abc9c;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(26, 188, 156, 0.3);
+  transition: all 0.3s ease;
+  image-rendering: pixelated;
+}
+
+#game:hover {
+  box-shadow: 0 12px 35px rgba(26, 188, 156, 0.5);
+}
+
+/* Game Over Screen */
+#gameover {
+  display: none;
+  padding: 30px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(231, 76, 60, 0.4);
+  animation: slideUp 0.5s ease-out;
+}
+
+#gameover.active {
+  display: block;
+}
+
+#gameover h2 {
+  color: #e74c3c;
+  font-size: 2em;
+  margin: 0 0 20px 0;
+  text-shadow: 0 2px 10px rgba(231, 76, 60, 0.5);
+}
+
+#finalscore {
+  font-size: 1.2em;
+  margin: 20px 0;
+  color: #ecf0f1;
+}
+
+#finalscore p {
+  margin: 8px 0;
+}
+
+/* Form Controls */
+label {
+  display: block;
+  margin: 15px 0 8px 0;
+  font-weight: 600;
+  font-size: 1.05em;
+  color: #ecf0f1;
+}
+
+select, button, input[type="text"] {
+  font-size: 1em;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 2px solid #16a085;
+  background: rgba(22, 160, 133, 0.1);
+  color: #fff;
+  margin: 10px 8px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+input[type="text"] {
+  cursor: text;
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+  margin: 8px auto;
+}
+
+input[type="text"]::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #1abc9c;
+  background: rgba(26, 188, 156, 0.2);
+  box-shadow: 0 0 15px rgba(26, 188, 156, 0.4);
+}
+
+.input-group {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(22, 160, 133, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #1abc9c;
+}
+
+.input-group small {
+  display: block;
+  color: #bdc3c7;
+  font-size: 0.85em;
+  margin-top: 5px;
+}
+
+select {
+  cursor: pointer;
+  max-width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 1.5em;
+  padding-right: 40px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover, select:hover, input[type="text"]:hover {
+  background: rgba(26, 188, 156, 0.2);
+  border-color: #1abc9c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(26, 188, 156, 0.3);
+}
+
+/* Audio */
+audio {
+  display: none;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 2em;
+    margin: 15px 0;
+  }
+
+  #container {
+    max-width: 100%;
+    width: 95%;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  #game {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-width: 2px;
+  }
+
+  #scoreboard {
+    font-size: 1.1em;
+    padding: 12px;
+  }
+
+  button, select {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    margin: 8px 4px;
+  }
+
+  #startscreen,
+  #gameover {
+    padding: 20px;
+  }
+
+  #startscreen p,
+  #gameover h2 {
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 400px) {
+  h1 {
+    font-size: 1.6em;
+    letter-spacing: 1px;
+  }
+
+  #container {
+    padding: 15px;
+  }
+
+  #scoreboard {
+    font-size: 1em;
+  }
+
+  button, select {
+    width: 100%;
+    padding: 10px 15px;
+    margin: 8px 0;
+  }
+
+  select {
+    background-position: right 8px center;
+    background-size: 1.2em;
+    padding-right: 35px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Dark mode preference (already dark, but respect system preference) */
+@media (prefers-color-scheme: dark) {
+  body {
+    color-scheme: dark;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  #container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  button {
+    display: none;
+  }
+}

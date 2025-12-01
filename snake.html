@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A classic Snake game implemented in HTML5 Canvas with difficulty levels and persistent scoring">
+  <title>Snake Game</title>
+  <link rel="stylesheet" href="snake.css">
+</head>
+<body>
+  <h1>Snake Game</h1>
+  <div id="container">
+    <div id="scoreboard">
+      Score: <span id="score">0</span> | Best: <span id="bestscore">0</span>
+    </div>
+    
+    <div id="startscreen" class="active">
+      <p><b>Welcome to Snake Game!</b></p>
+      
+      <div class="input-group">
+        <label for="playerName">Enter Your Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+        <small>Maximum 20 characters</small>
+      </div>
+      
+      <p>Use <span class="highlight">Arrow keys</span> or <span class="highlight">WASD</span> to control the snake.</p>
+      <p>Eat the red food, avoid walls and yourself!</p>
+      
+      <label for="diff">Select Difficulty:</label>
+      <select id="diff">
+        <option value="slow">Slow</option>
+        <option value="medium" selected>Medium</option>
+        <option value="fast"> Fast</option>
+      </select>
+      <br>
+      <button onclick="startGame()">Start Game</button>
+    </div>
+    
+    <canvas id="game" width="400" height="400" style="display:none"></canvas>
+    
+    <div id="gameover">
+      <h2>Game Over!</h2>
+      <div id="finalscore"></div>
+      <button onclick="restartGame()">Restart</button>
+    </div>
+    
+    <audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  </div>
+
+  <script>
+    /**
+     * Snake Game - HTML5 Canvas Implementation
+     * Author: Your Name
+     * Date: 2025
+     */
+
+    // ============ CONFIGURATION ============
+    const CONFIG = {
+      GRID_SIZE: 20,
+      CANVAS_WIDTH: 400,
+      CANVAS_HEIGHT: 400,
+      DIFFICULTIES: {
+        slow: 200,
+        medium: 100,
+        fast: 50
+      },
+      COLORS: {
+        background: '#111',
+        snake: '#1abc9c',
+        snakeHead: '#f1c40f',
+        food: '#e74c3c',
+        gridLine: '#333'
+      },
+      STORAGE_KEY: 'snake_bestscore',
+      MAX_NAME_LENGTH: 20
+    };
+
+    // ============ DOM ELEMENTS ============
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreSpan = document.getElementById('score');
+    const bestSpan = document.getElementById('bestscore');
+    const startscreen = document.getElementById('startscreen');
+    const gameover = document.getElementById('gameover');
+    const finalscore = document.getElementById('finalscore');
+    const beepSound = document.getElementById('beep');
+    const diffSelect = document.getElementById('diff');
+    const scoreboard = document.getElementById('scoreboard');
+    const playerNameInput = document.getElementById('playerName');
+
+    // ============ GAME STATE ============
+    let gameState = {
+      snake: [],
+      food: { x: 0, y: 0 },
+      direction: { dx: 0, dy: 0 },
+      nextDirection: { dx: 0, dy: 0 },
+      score: 0,
+      bestScore: parseInt(localStorage.getItem(CONFIG.STORAGE_KEY)) || 0,
+      speed: CONFIG.DIFFICULTIES.medium,
+      running: false,
+      gameLoop: null,
+      playerName: "Player"
+    };
+
+    // Initialize best score display
+    bestSpan.textContent = gameState.bestScore;
+
+    // ============ UTILITY FUNCTIONS ============
+    /**
+     * Generate random position on grid
+     */
+    function getRandomGridPosition() {
+      return {
+        x: Math.floor(Math.random() * (CONFIG.CANVAS_WIDTH / CONFIG.GRID_SIZE)) * CONFIG.GRID_SIZE,
+        y: Math.floor(Math.random() * (CONFIG.CANVAS_HEIGHT / CONFIG.GRID_SIZE)) * CONFIG.GRID_SIZE
+      };
+    }
+
+    /**
+     * Initialize game state
+     */
+    function initGame() {
+      gameState.snake = [
+        { x: 160, y: 160 },
+        { x: 140, y: 160 },
+        { x: 120, y: 160 }
+      ];
+      gameState.direction = { dx: CONFIG.GRID_SIZE, dy: 0 };
+      gameState.nextDirection = { dx: CONFIG.GRID_SIZE, dy: 0 };
+      gameState.food = getRandomGridPosition();
+      gameState.score = 0;
+      gameState.running = true;
+      scoreSpan.textContent = gameState.score;
+    }
+
+    /**
+     * Check if two positions are equal
+     */
+    function positionsEqual(pos1, pos2) {
+      return pos1.x === pos2.x && pos1.y === pos2.y;
+    }
+
+    /**
+     * Check if position is in array
+     */
+    function isPositionInArray(pos, array) {
+      return array.some(item => positionsEqual(item, pos));
+    }
+
+    // ============ INPUT HANDLING ============
+    document.addEventListener('keydown', handleKeyPress);
+
+    function handleKeyPress(e) {
+      if (!gameState.running) return;
+
+      const key = e.key.toLowerCase();
+      const keyMap = {
+        'arrowleft': { dx: -CONFIG.GRID_SIZE, dy: 0 },
+        'a': { dx: -CONFIG.GRID_SIZE, dy: 0 },
+        'arrowup': { dx: 0, dy: -CONFIG.GRID_SIZE },
+        'w': { dx: 0, dy: -CONFIG.GRID_SIZE },
+        'arrowright': { dx: CONFIG.GRID_SIZE, dy: 0 },
+        'd': { dx: CONFIG.GRID_SIZE, dy: 0 },
+        'arrowdown': { dx: 0, dy: CONFIG.GRID_SIZE },
+        's': { dx: 0, dy: CONFIG.GRID_SIZE }
+      };
+
+      if (key in keyMap) {
+        e.preventDefault();
+        const newDir = keyMap[key];
+        // Prevent 180-degree turns
+        if (!(gameState.direction.dx === -newDir.dx && gameState.direction.dy === -newDir.dy)) {
+          gameState.nextDirection = newDir;
+        }
+      }
+    }
+
+    // ============ DRAWING FUNCTIONS ============
+    /**
+     * Draw the game board background
+     */
+    function drawBackground() {
+      ctx.fillStyle = CONFIG.COLORS.background;
+      ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+      
+      // Draw grid lines for better visibility
+      ctx.strokeStyle = CONFIG.COLORS.gridLine;
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= CONFIG.CANVAS_WIDTH; i += CONFIG.GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, CONFIG.CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= CONFIG.CANVAS_HEIGHT; i += CONFIG.GRID_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(CONFIG.CANVAS_WIDTH, i);
+        ctx.stroke();
+      }
+    }
+
+    /**
+     * Draw the snake
+     */
+    function drawSnake() {
+      gameState.snake.forEach((segment, index) => {
+        if (index === 0) {
+          // Draw head with different color
+          ctx.fillStyle = CONFIG.COLORS.snakeHead;
+          ctx.shadowColor = 'rgba(241, 196, 15, 0.5)';
+          ctx.shadowBlur = 8;
+        } else {
+          // Draw body
+          ctx.fillStyle = CONFIG.COLORS.snake;
+          ctx.shadowColor = 'rgba(26, 188, 156, 0.3)';
+          ctx.shadowBlur = 4;
+        }
+        ctx.fillRect(segment.x + 1, segment.y + 1, CONFIG.GRID_SIZE - 2, CONFIG.GRID_SIZE - 2);
+        ctx.shadowColor = 'transparent';
+      });
+    }
+
+    /**
+     * Draw the player name and score on canvas
+     */
+    function drawScore() {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(`Player: ${gameState.playerName}`, 10, 20);
+      ctx.fillText(`Score: ${gameState.score}`, 10, 40);
+    }
+
+    /**
+     * Draw the food
+     */
+    function drawFood() {
+      ctx.fillStyle = CONFIG.COLORS.food;
+      ctx.shadowColor = 'rgba(231, 76, 60, 0.6)';
+      ctx.shadowBlur = 10;
+      ctx.fillRect(gameState.food.x + 2, gameState.food.y + 2, CONFIG.GRID_SIZE - 4, CONFIG.GRID_SIZE - 4);
+      ctx.shadowColor = 'transparent';
+    }
+
+    /**
+     * Draw entire game state
+     */
+    function draw() {
+      drawBackground();
+      drawSnake();
+      drawFood();
+      drawScore();
+    }
+
+    // ============ GAME LOGIC ============
+    /**
+     * Update game state
+     */
+    function update() {
+      // Apply next direction (allows smooth direction changes)
+      gameState.direction = gameState.nextDirection;
+
+      // Calculate new head position
+      const head = gameState.snake[0];
+      const newHead = {
+        x: head.x + gameState.direction.dx,
+        y: head.y + gameState.direction.dy
+      };
+
+      // Check collisions
+      if (checkCollisions(newHead)) {
+        endGame();
+        return;
+      }
+
+      // Add new head
+      gameState.snake.unshift(newHead);
+
+      // Check food collision
+      if (positionsEqual(newHead, gameState.food)) {
+        gameState.score++;
+        scoreSpan.textContent = gameState.score;
+        gameState.food = getRandomGridPosition();
+        playSound();
+      } else {
+        // Remove tail if no food eaten
+        gameState.snake.pop();
+      }
+    }
+
+    /**
+     * Check if snake collided with walls or itself
+     */
+    function checkCollisions(head) {
+      // Wall collision
+      if (head.x < 0 || head.x >= CONFIG.CANVAS_WIDTH ||
+          head.y < 0 || head.y >= CONFIG.CANVAS_HEIGHT) {
+        return true;
+      }
+
+      // Self collision
+      if (isPositionInArray(head, gameState.snake)) {
+        return true;
+      }
+
+      return false;
+    }
+
+    /**
+     * Play beep sound
+     */
+    function playSound() {
+      try {
+        beepSound.currentTime = 0;
+        beepSound.play().catch(() => console.log('Sound playback failed'));
+      } catch (e) {
+        console.log('Audio not available');
+      }
+    }
+
+    /**
+     * Main game loop
+     */
+    function gameLoop() {
+      if (!gameState.running) {
+        clearTimeout(gameState.gameLoop);
+        return;
+      }
+
+      update();
+      draw();
+      gameState.gameLoop = setTimeout(gameLoop, gameState.speed);
+    }
+
+    // ============ GAME CONTROL ============
+    /**
+     * Start the game
+     */
+    function startGame() {
+      const playerName = playerNameInput.value.trim();
+      
+      if (!playerName) {
+        alert("Please enter your name to start the game!");
+        playerNameInput.focus();
+        return;
+      }
+      
+      if (playerName.length > CONFIG.MAX_NAME_LENGTH) {
+        alert(`Name must be ${CONFIG.MAX_NAME_LENGTH} characters or less!`);
+        playerNameInput.focus();
+        return;
+      }
+
+      gameState.playerName = playerName;
+      startscreen.classList.remove('active');
+      canvas.style.display = 'block';
+      scoreboard.style.display = 'block';
+      gameover.classList.remove('active');
+
+      const difficulty = diffSelect.value;
+      gameState.speed = CONFIG.DIFFICULTIES[difficulty];
+
+      initGame();
+      gameLoop();
+    }
+
+    /**
+     * Restart the game
+     */
+    function restartGame() {
+      gameover.classList.remove('active');
+      canvas.style.display = 'block';
+      scoreboard.style.display = 'block';
+
+      const difficulty = diffSelect.value;
+      gameState.speed = CONFIG.DIFFICULTIES[difficulty];
+
+      initGame();
+      gameLoop();
+    }
+
+    /**
+     * End the game
+     */
+    function endGame() {
+      gameState.running = false;
+      playSound();
+
+      canvas.style.display = 'none';
+      scoreboard.style.display = 'none';
+      gameover.classList.add('active');
+
+      finalscore.innerHTML = `<p>Player: <strong style="color: #1abc9c;">${gameState.playerName}</strong></p>`;
+      finalscore.innerHTML += `<p>Final Score: <strong>${gameState.score}</strong></p>`;
+
+      // Update best score if current score is higher
+      if (gameState.score > gameState.bestScore) {
+        gameState.bestScore = gameState.score;
+        localStorage.setItem(CONFIG.STORAGE_KEY, gameState.bestScore);
+        bestSpan.textContent = gameState.bestScore;
+        finalscore.innerHTML += '<p style="color: #f1c40f;">🎉 New Best Score!</p>';
+      }
+    }
+  </script>
+</body>
+</html>
